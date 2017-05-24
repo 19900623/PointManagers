@@ -437,9 +437,10 @@ public class PointManager
                 {
                     IRow Row = Sheet.GetRow(i);
                     string name = Row.GetCell(0).ToString();
-                    double X = Convert.ToDouble(Row.GetCell(1).ToString().Replace('.', ','));
-                    double Y = Convert.ToDouble(Row.GetCell(2).ToString().Replace('.', ','));
-                    double Z = Convert.ToDouble(Row.GetCell(3).ToString().Replace('.', ','));
+                    string badsymbol = @"'";
+                    double X = Convert.ToDouble(Row.GetCell(1).ToString().Replace('.', ',').ToString().Replace('.', ',').Replace(badsymbol, "").Replace(" ", ""));
+                    double Y = Convert.ToDouble(Row.GetCell(2).ToString().Replace('.', ',').ToString().Replace('.', ',').Replace(badsymbol, "").Replace(" ", ""));
+                    double Z = Convert.ToDouble(Row.GetCell(3).ToString().Replace('.', ',').ToString().Replace('.', ',').Replace(badsymbol, "").Replace(" ", ""));
                     NodePoint iNode = new NodePoint(name, X, Y, Z);
                     AllPoints.Add(iNode);
                 }
@@ -460,7 +461,6 @@ public class PointManager
             var newpoint = new Point3d(node.X, node.Y, node.Z);
             var p = part.Points.CreatePoint(newpoint);
             Tlist.Add(p as NXObject);
-            node.Name = "A" + counter++;
             p.SetName(node.Name);
             PointFeatureBuilder p_feature;
             p_feature = part.BaseFeatures.CreatePointFeatureBuilder(null);
