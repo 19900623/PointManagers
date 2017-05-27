@@ -114,7 +114,7 @@ namespace PointManager_CATIA
             }
             else
             {
-                throw new InvalidOperationException("Document not found");
+                throw new InvalidOperationException("Документ не найден.Проставление точек невозможно при работе с CATProduct.Откройте нужную деталь(CATPart) отдельно.");
             }
 
         }
@@ -220,7 +220,7 @@ namespace PointManager_CATIA
             }
             else
             {
-                MessageBox.Show("Документ не найден. Проставление точек невозможно при работе с CATProduct. Откройте нужную деталь (CATPart) отдельно.", "Упс!", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(res, "Упс!", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             
         }
@@ -230,39 +230,50 @@ namespace PointManager_CATIA
             var p = e.Argument as Iparams;
             string FileName = p.name;
 
-            var inputFile = new FileStream(FileName, FileMode.Open, FileAccess.Read);
-            if (FileName.ToLower().EndsWith(".xlsx"))
+            FileStream inputFile = null;
+            try
             {
-                XSSFWorkbook inbook = OpenFileXLSX(FileName);
-                try
-                {
-                    DrawPoints(inbook);
-                    if (p.annotate == true)
-                    {
-                        SetAnnotations(p.type);
-                    }
-                    e.Result = "ok";
-                }
-                catch(InvalidOperationException ex)
-                {
-                    e.Result = ex.Message;
-                }
+                inputFile = new FileStream(FileName, FileMode.Open, FileAccess.Read);
             }
-            if (FileName.ToLower().EndsWith(".xls"))
+            catch(IOException)
             {
-                HSSFWorkbook inbook = OpenFileXLS(FileName);
-                try
+                e.Result = "Нет доступа к файлу. Возможно файл уже открыт в другой программе?";
+            }
+            if (inputFile != null)
+            {
+                if (FileName.ToLower().EndsWith(".xlsx"))
                 {
-                    DrawPoints(inbook);
-                    if (p.annotate == false)
+                    XSSFWorkbook inbook = OpenFileXLSX(FileName);
+                    try
                     {
-                        SetAnnotations(p.type);
+                        DrawPoints(inbook);
+                        if (p.annotate == true)
+                        {
+                            SetAnnotations(p.type);
+                        }
+                        e.Result = "ok";
                     }
-                    e.Result = "ok";
+                    catch (InvalidOperationException ex)
+                    {
+                        e.Result = ex.Message;
+                    }
                 }
-                catch (InvalidOperationException ex)
+                if (FileName.ToLower().EndsWith(".xls"))
                 {
-                    e.Result = ex.Message;
+                    HSSFWorkbook inbook = OpenFileXLS(FileName);
+                    try
+                    {
+                        DrawPoints(inbook);
+                        if (p.annotate == false)
+                        {
+                            SetAnnotations(p.type);
+                        }
+                        e.Result = "ok";
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        e.Result = ex.Message;
+                    }
                 }
             }
         }
