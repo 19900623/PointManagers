@@ -95,20 +95,28 @@ namespace PointManager_CATIA
             ////
             CATIA = (INFITF.Application)Marshal.GetActiveObject("Catia.Application");
             var partDoc = CATIA.ActiveDocument as PartDocument;
-            var Part = partDoc.Part;
-            var HBodies = Part.HybridBodies;
-            var HBody = HBodies.Add();
-            HBody.set_Name("Import Points_" + AllPoints.Count.ToString());
-            Part.Update();
-            var ShapeFactory = Part.HybridShapeFactory as HybridShapeFactory;
-            foreach (NodePoint iNode in AllPoints)
+            if (partDoc != null)
             {
-                var Point = ShapeFactory.AddNewPointCoord(iNode.X, iNode.Y, iNode.Z);
-                Point.set_Name(iNode.Name);
-                iNode.link = Point as HybridShapeTypeLib.Point;
-                HBody.AppendHybridShape(Point);
+                var Part = partDoc.Part;
+                var HBodies = Part.HybridBodies;
+                var HBody = HBodies.Add();
+                HBody.set_Name("Import Points_" + AllPoints.Count.ToString());
+                Part.Update();
+                var ShapeFactory = Part.HybridShapeFactory as HybridShapeFactory;
+                foreach (NodePoint iNode in AllPoints)
+                {
+                    var Point = ShapeFactory.AddNewPointCoord(iNode.X, iNode.Y, iNode.Z);
+                    Point.set_Name(iNode.Name);
+                    iNode.link = Point as HybridShapeTypeLib.Point;
+                    HBody.AppendHybridShape(Point);
+                }
+                Part.Update();
             }
-            Part.Update();
+            else
+            {
+                throw new InvalidOperationException("Document not found");
+            }
+
         }
          
 
@@ -205,7 +213,16 @@ namespace PointManager_CATIA
             ImportButton.Content = "Открыть файл";
             ImportButton.IsEnabled = true;
             ExportButton.IsEnabled = true;
-            MessageBox.Show("Все точки проставлены.", "Готово!", MessageBoxButton.OK, MessageBoxImage.Information);
+            var res = e.Result as string;
+            if (res == "ok")
+            {
+                MessageBox.Show("Все точки проставлены.", "Готово!", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Документ не найден. Проставление точек невозможно при работе с CATProduct. Откройте нужную деталь (CATPart) отдельно.", "Упс!", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            
         }
 
         private void ImportWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -217,19 +234,35 @@ namespace PointManager_CATIA
             if (FileName.ToLower().EndsWith(".xlsx"))
             {
                 XSSFWorkbook inbook = OpenFileXLSX(FileName);
-                DrawPoints(inbook);
-                if (p.annotate == true)
+                try
                 {
-                    SetAnnotations(p.type);
+                    DrawPoints(inbook);
+                    if (p.annotate == true)
+                    {
+                        SetAnnotations(p.type);
+                    }
+                    e.Result = "ok";
+                }
+                catch(InvalidOperationException ex)
+                {
+                    e.Result = ex.Message;
                 }
             }
             if (FileName.ToLower().EndsWith(".xls"))
             {
                 HSSFWorkbook inbook = OpenFileXLS(FileName);
-                DrawPoints(inbook);
-                if (p.annotate == false)
+                try
                 {
-                    SetAnnotations(p.type);
+                    DrawPoints(inbook);
+                    if (p.annotate == false)
+                    {
+                        SetAnnotations(p.type);
+                    }
+                    e.Result = "ok";
+                }
+                catch (InvalidOperationException ex)
+                {
+                    e.Result = ex.Message;
                 }
             }
         }
